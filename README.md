@@ -27,6 +27,8 @@ SAR imagery is uniquely suited for flood monitoring during monsoon conditions be
 6. **Area Calculation & Export:** Compute total flooded area in hectares and export the result as a GeoTIFF to Google Drive.
 
 ---
+## Flood Extent Visualization
+![Darbhanga Flood Map](./dbg_flood_map_preview.png)
 
 ## 🚀 How to Run
 
