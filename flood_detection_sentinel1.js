@@ -1,15 +1,5 @@
 var geometry = 
-    /* color: #d63000 */
-    /* displayProperties: [
-      {
-        "type": "rectangle"
-      }
-    ] */
-    ee.Geometry.Polygon(
-        [[[85.83900879718921, 26.2263762799761],
-          [85.83900879718921, 26.079069080064016],
-          [85.95573853351733, 26.079069080064016],
-          [85.95573853351733, 26.2263762799761]]], null, false),
+    ee.FeatureCollection("projects/learning-gee-494316/assets/dbg_boundary");
 var imageCollection = ee.ImageCollection("COPERNICUS/S1_GRD");
 // * FLOOD MAPPING USING SENTINEL-1 IMAGERY IN GEE *
 // 1. DEFINING AREA OF INTEREST AND DATES
