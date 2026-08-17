@@ -18,33 +18,35 @@ var passDirection = 'ASCENDING';
 var threshold = 1.25;
 var slopeThreshold = 5;
 
+//2. LOADING AND FILTERING SENTINEL-1 COLLECTION
 var s1 = imageCollection.filterBounds(geometry)
-//.filter(ee.Filter.eq('instrumentMode', 'IW'))
-//.filter(ee.Filter.eq('transmitterReceiverPolarisation', polarization))
-//.filter(ee.Filter.eq('orbitProperties_pass','passDirection'))
+.filter(ee.Filter.eq('instrumentMode', 'IW'))
+.filter(ee.Filter.listContains('transmitterReceiverPolarisation', polarization))
+.filter(ee.Filter.eq('orbitProperties_pass',passDirection))
 .select(polarization);
 
 //Creating the mosaics
 var preImage = s1.filterDate(preStart,preEnd).mosaic().clip(geometry);
 var postImage = s1.filterDate(postStart, postEnd).mosaic().clip(geometry);
 
+//Checking how many tiles we got(Optional)
 print (preImage);
 print (postImage);
 
 print ('preImage count:', s1.filterDate(preStart, preEnd).size());
 print ('postImage count:', s1.filterDate(postStart, postEnd).size());
 
-//Speckle filtering (focal mean)
+//3. SPECKLE FILTERING (FOCAL MEAN)
 var smoothingRadius = 50; //meters
 var preFiltered = preImage.focal_mean(smoothingRadius, 'circle', 'meters');
 var postFiltered = postImage.focal_mean(smoothingRadius, 'circle', 'meters');
 
-//Flood detection (Ratio & Thresholding)
+//4. FLOOD DETECTION (Ratio & Thresholding)
 //Smooth water surfaces scatter radar away, showing up as low/dark values in post-flood
 var ratio = preFiltered.divide(postFiltered);
 var rawFlood = ratio.gt(threshold);
 
-//Masking noise, slopes, and permamnet water
+//5. MASKING NOISE, SLOPES, AND PERMANENT WATER
 
 //A. Slope masking (HydroSHEDS DEM)
 var dem = ee.Image('WWF/HydroSHEDS/03CONDEM');
@@ -56,13 +58,13 @@ var jrcWater = ee.Image('JRC/GSW1_4/GlobalSurfaceWater');
 var permanentWater = jrcWater.select('occurrence').gt(80); //Areas wet > 80% of time
 var nonPermanentWaterMask = permanentWater.eq(0);
 
-//Comining masks
+//Combining masks
 var finalFlood = rawFlood
 .updateMask(slopeMask)
 .updateMask(nonPermanentWaterMask)
 .selfMask(); //Hide non-flooded background pixels
 
-// Calculating flooded area
+//6. CALCULATING FLOOD AREA
 var floodAreaImage = finalFlood.multiply(ee.Image.pixelArea());
 var areaStats = floodAreaImage.reduceRegion({
   reducer: ee.Reducer.sum(),
@@ -75,7 +77,7 @@ var floodAreaHa =
 ee.Number(areaStats.get(polarization)).divide(10000); //convert sq m to ha
 print ('Est Flooded Area (ha):', floodAreaHa);
 
-//Visualization on map
+//7. VISUALIZATION ON MAP
 Map.centerObject(geometry, 12);
 
 //Adding pre and post images in dB scale representation
@@ -99,7 +101,7 @@ Map.addLayer(
   Map.addLayer(finalFlood, {palette: ['FF0000']},
   'Detected Flood Extent');
   
-  //Exporting the mask to G-Drive
+  //8. EXPORTING FLOOS MASK TO G-DRIVE
   Export.image.toDrive({
     image:finalFlood,
     description: 'Sentinel1_Flood_Mask',
